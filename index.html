@@ -8,7 +8,7 @@
   <!-- Tailwind CSS & Google Fonts (Prompt) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- TensorFlow.js & Teachable Machine Library -->
@@ -19,108 +19,170 @@
     body {
       font-family: 'Prompt', sans-serif;
     }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between">
+<body class="bg-gradient-to-b from-indigo-50/60 via-sky-50/40 to-slate-50 min-h-screen text-slate-800 flex flex-col justify-between antialiased">
 
-  <!-- Header -->
-  <header class="bg-indigo-600 text-white shadow-md">
-    <div class="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
+  <!-- แถบด้านบน (Header) -->
+  <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-indigo-100 shadow-xs">
+    <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="text-3xl">🕵️‍♂️</span>
+        <div class="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl shadow-md shadow-indigo-200 animate-float">
+          🕵️‍♂️
+        </div>
         <div>
-          <h1 class="text-xl md:text-2xl font-bold tracking-tight">นักสืบไซเบอร์จิ๋ว (Cyber Detective)</h1>
-          <p class="text-xs md:text-sm text-indigo-100">AI ช่วยตรวจสอบข้อความ SMS ลิงก์ และเว็บอันตรายสำหรับเด็ก</p>
+          <h1 class="text-lg md:text-xl font-bold text-slate-800 tracking-tight leading-tight">
+            นักสืบไซเบอร์จิ๋ว
+          </h1>
+          <p class="text-xs text-slate-500">ระบบ AI ช่วยตรวจสอบข้อความ & ลิงก์ต้องสงสัย</p>
         </div>
       </div>
-      <!-- ป้ายสถานะ AI โหลดอัตโนมัติ -->
-      <div id="aiStatusBadge" class="bg-indigo-700/80 text-white text-xs px-3.5 py-1.5 rounded-full font-medium flex items-center gap-2 shadow-inner">
-        <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" id="statusDot"></span>
+      
+      <!-- สถานะ AI แบบ Minimal Pill -->
+      <div id="aiStatusBadge" class="bg-slate-100 border border-slate-200 text-slate-600 text-xs px-3.5 py-1.5 rounded-full font-medium flex items-center gap-2 shadow-inner">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="statusDot"></span>
         <span id="statusText">กำลังปลุกสมองกล AI...</span>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
+  <!-- เนื้อหาหลัก (Main) -->
+  <main class="max-w-2xl mx-auto px-4 py-8 flex-1 w-full space-y-6">
 
-    <!-- กล่องอัปโหลดรูปภาพ (UI สำหรับเด็ก ไม่ต้องพิมพ์ลิงก์) -->
-    <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 text-center">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 text-2xl mb-3">
-        🔍
+    <!-- แถบ 3 ขั้นตอนง่ายๆ -->
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-white/70 border border-indigo-100 rounded-2xl p-2.5 shadow-xs">
+        <span class="text-base">📸</span>
+        <p class="text-xs font-semibold text-slate-700 mt-0.5">1. เลือกรูปภาพ</p>
       </div>
-      <h2 class="text-xl font-bold text-slate-800 mb-1">ส่งรูปภาพข้อความหรือหน้าจอมาตรวจ</h2>
-      <p class="text-sm text-slate-500 mb-6">หากพบข้อความชวนสงสัย หรือลิงก์แปลกๆ ส่งรูปมาให้ AI ช่วยดูได้เลย!</p>
-
-      <!-- Dropzone -->
-      <label 
-        for="imageUpload" 
-        class="group border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/40 hover:bg-indigo-50/80 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition"
-      >
-        <div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl mb-3 group-hover:scale-110 transition">
-          📸
-        </div>
-        <p class="text-sm font-semibold text-indigo-900 mb-1">แตะตรงนี้เพื่อเลือกรูปภาพ</p>
-        <p class="text-xs text-slate-400">รองรับภาพแคปหน้าจอจากมือถือและคอมพิวเตอร์ (PNG, JPG)</p>
-        <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImage(event)" />
-      </label>
-
-      <!-- Preview Image -->
-      <div id="previewContainer" class="hidden mt-6 flex flex-col items-center">
-        <div class="relative max-h-72 max-w-sm rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
-          <img id="imagePreview" src="" alt="ตัวอย่างรูปภาพ" class="max-h-72 object-contain mx-auto" />
-        </div>
-        <button 
-          id="predictBtn"
-          onclick="predict()" 
-          class="mt-5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-base px-8 py-3 rounded-full shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span>🚀</span> เริ่มตรวจสอบความปลอดภัย
-        </button>
+      <div class="bg-white/70 border border-indigo-100 rounded-2xl p-2.5 shadow-xs">
+        <span class="text-base">⚡</span>
+        <p class="text-xs font-semibold text-slate-700 mt-0.5">2. กดให้ AI ตรวจ</p>
+      </div>
+      <div class="bg-white/70 border border-indigo-100 rounded-2xl p-2.5 shadow-xs">
+        <span class="text-base">🛡️</span>
+        <p class="text-xs font-semibold text-slate-700 mt-0.5">3. ปลอดภัยทันที</p>
       </div>
     </div>
 
-    <!-- ผลลัพธ์การสแกน -->
-    <div id="resultCard" class="hidden mt-6 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 transition-all">
-      <div class="flex items-center gap-4 mb-4">
+    <!-- กล่องอัปโหลดรูปภาพ -->
+    <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200/80 text-center transition-all">
+      <div class="mb-4">
+        <h2 class="text-xl font-bold text-slate-800">ตรวจสอบข้อความน่าสงสัย</h2>
+        <p class="text-sm text-slate-500 mt-1">เจอ SMS แปลกลิงก์แจกของ หรือชวนเล่นเกม แคปหน้าจอมาให้ตรวจเลย!</p>
+      </div>
+
+      <!-- Dropzone (รองรับทั้งคลิกและลากวาง) -->
+      <div id="dropArea" class="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/30 hover:bg-indigo-50/70 rounded-2xl p-7 transition cursor-pointer flex flex-col items-center justify-center">
+        <div class="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl mb-3 text-indigo-500">
+          📥
+        </div>
+        <p class="text-sm font-semibold text-indigo-950 mb-1">ลากรูปมาวางตรงนี้ หรือแตะเพื่อเลือกรูป</p>
+        <p class="text-xs text-slate-400">รองรับภาพแคปหน้าจอมือถือและคอมพิวเตอร์ (PNG, JPG)</p>
+        <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImage(event)" />
+      </div>
+
+      <!-- Preview Image -->
+      <div id="previewContainer" class="hidden mt-6 flex flex-col items-center animate-fade-in">
+        <div class="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 max-h-72 w-full max-w-sm flex items-center justify-center p-2">
+          <img id="imagePreview" src="" alt="ตัวอย่างรูปภาพ" class="max-h-68 rounded-xl object-contain" />
+        </div>
+
+        <div class="flex items-center gap-3 mt-5">
+          <button 
+            onclick="resetImage()" 
+            class="px-4 py-2.5 text-xs md:text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition cursor-pointer"
+          >
+            🔄 เปลี่ยนรูปใหม่
+          </button>
+          <button 
+            id="predictBtn"
+            onclick="predict()" 
+            class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold text-sm md:text-base px-7 py-2.5 rounded-full shadow-md shadow-indigo-300 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <span>🔍</span> เริ่มตรวจสอบเลย!
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- กล่องแสดงผลลัพธ์การสแกน -->
+    <div id="resultCard" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 transition-all">
+      <div class="flex items-start gap-4 mb-4">
         <div id="resultIcon" class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"></div>
-        <div>
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">ผลการวิเคราะห์</span>
-          <h3 id="resultTitle" class="text-lg md:text-xl font-bold"></h3>
-          <p id="resultConfidence" class="text-xs text-slate-500 mt-0.5"></p>
+        <div class="flex-1">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">ผลการวิเคราะห์จากสมองกล AI</span>
+          <h3 id="resultTitle" class="text-lg md:text-xl font-bold mt-0.5"></h3>
+          <p id="resultConfidence" class="text-xs text-slate-500 mt-1"></p>
         </div>
       </div>
 
-      <!-- แถบแสดงเปอร์เซ็นต์ -->
-      <div class="w-full bg-slate-100 rounded-full h-3 mb-5 overflow-hidden">
-        <div id="confidenceBar" class="h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+      <!-- แถบแสดงเปอร์เซ็นต์ความมั่นใจ -->
+      <div class="w-full bg-slate-100 rounded-full h-3 mb-5 overflow-hidden p-0.5">
+        <div id="confidenceBar" class="h-2 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
       </div>
 
       <!-- คำแนะนำสำหรับเด็ก -->
       <div id="adviceContainer" class="p-4 rounded-2xl border text-sm space-y-2"></div>
+
+      <!-- ปุ่มเริ่มตรวจรูปอื่นต่อ -->
+      <div class="text-center mt-5">
+        <button 
+          onclick="resetImage()" 
+          class="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline underline-offset-4 cursor-pointer"
+        >
+          ➕ สแกนข้อความอื่นเพิ่มเติม
+        </button>
+      </div>
+    </div>
+
+    <!-- การ์ด 3 กฎทองความปลอดภัย (สาระน่ารู้สำหรับเด็ก) -->
+    <div class="bg-gradient-to-br from-indigo-50/70 to-purple-50/50 rounded-2xl p-5 border border-indigo-100/80">
+      <div class="flex items-center gap-2 mb-2.5 text-indigo-900 font-bold text-sm">
+        <span>💡</span> 3 กฎทองของนักสืบไซเบอร์
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs text-slate-600">
+        <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-50">
+          <span class="font-bold text-rose-600">1. อย่าเพิ่งเชื่อ:</span> มีรางวัลใหญ่ หรือขู่ระงับบัญชี มักเป็นกลลวง
+        </div>
+        <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-50">
+          <span class="font-bold text-amber-600">2. อย่าเพิ่งกด:</span> ลิงก์แปลกๆ อาจพาไปเว็บดูดรหัสผ่าน
+        </div>
+        <div class="bg-white/80 p-2.5 rounded-xl border border-indigo-50">
+          <span class="font-bold text-emerald-600">3. ปรึกษาผู้ใหญ่:</span> ถามคุณครูหรือผู้ปกครองก่อนตัดสินใจเสมอ
+        </div>
+      </div>
     </div>
 
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+  <!-- ท้ายหน้า (Footer) -->
+  <footer class="bg-white border-t border-slate-100 py-4 text-center text-xs text-slate-400">
     โครงงานเพื่อการศึกษา: การตรวจจับข้อความอันตรายและ Phishing ด้วย Machine Learning
   </footer>
 
   <!-- Script Logic -->
   <script>
-    // ฝังลิงก์โมเดลไว้ในนี้โดยตรง เพื่อไม่ต้องให้เด็กๆ กรอกเอง
     const MODEL_URL = "https://teachablemachine.withgoogle.com/models/-pFPhnGev/";
     
     let model;
     const statusText = document.getElementById('statusText');
     const statusDot = document.getElementById('statusDot');
+    const imageUpload = document.getElementById('imageUpload');
+    const dropArea = document.getElementById('dropArea');
     const imagePreview = document.getElementById('imagePreview');
     const previewContainer = document.getElementById('previewContainer');
     const resultCard = document.getElementById('resultCard');
     const predictBtn = document.getElementById('predictBtn');
 
-    // โหลดโมเดลอัตโนมัติทันทีที่เปิดหน้าเว็บ
+    // โหลดโมเดลอัตโนมัติเมื่อเปิดหน้า
     window.addEventListener('DOMContentLoaded', async () => {
       try {
         const modelJSON = MODEL_URL + "model.json";
@@ -128,26 +190,62 @@
         model = await tmImage.load(modelJSON, metadataJSON);
         
         statusText.textContent = "AI พร้อมปฏิบัติการ";
-        statusDot.className = "inline-block w-2 h-2 rounded-full bg-emerald-400";
+        statusDot.className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
+        document.getElementById('aiStatusBadge').className = "bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs px-3.5 py-1.5 rounded-full font-medium flex items-center gap-2 shadow-xs";
       } catch (err) {
         console.error(err);
-        statusText.textContent = "เชื่อมต่อ AI ขัดข้อง";
-        statusDot.className = "inline-block w-2 h-2 rounded-full bg-rose-400";
+        statusText.textContent = "ระบบขัดข้อง โปรดลองใหม่";
+        statusDot.className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
       }
     });
 
-    // แสดงตัวอย่างรูปภาพเมื่อเลือกไฟล์
+    // คลิกที่ Drop Area เพื่อเลือกไฟล์
+    dropArea.addEventListener('click', () => imageUpload.click());
+
+    // Drag and Drop Events
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropArea.classList.add('border-indigo-500', 'bg-indigo-100/60');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('border-indigo-500', 'bg-indigo-100/60');
+      }, false);
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        loadFile(files[0]);
+      }
+    });
+
     function handleImage(event) {
       const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          imagePreview.src = e.target.result;
-          previewContainer.classList.remove('hidden');
-          resultCard.classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
-      }
+      if (file) loadFile(file);
+    }
+
+    function loadFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imagePreview.src = e.target.result;
+        previewContainer.classList.remove('hidden');
+        dropArea.classList.add('hidden');
+        resultCard.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetImage() {
+      imageUpload.value = '';
+      imagePreview.src = '';
+      previewContainer.classList.add('hidden');
+      resultCard.classList.add('hidden');
+      dropArea.classList.remove('hidden');
     }
 
     // วิเคราะห์รูปภาพด้วยโมเดล
@@ -169,10 +267,10 @@
       displayResult(topPrediction);
 
       predictBtn.disabled = false;
-      predictBtn.innerHTML = '<span>🚀</span> เริ่มตรวจสอบความปลอดภัย';
+      predictBtn.innerHTML = '<span>🔍</span> เริ่มตรวจสอบเลย!';
     }
 
-    // แสดงผลลัพธ์และคำแนะนำสำหรับเด็ก
+    // แสดงผลลัพธ์พร้อมข้อความแนะนำ
     function displayResult(result) {
       resultCard.classList.remove('hidden');
       const className = result.className.toLowerCase();
@@ -188,19 +286,21 @@
       confidenceBar.style.width = `${percent}%`;
 
       if (className.includes('phishing') || className.includes('danger') || className.includes('อันตราย')) {
-        resultTitle.textContent = 'อันตราย! ตรวจพบข้อความน่าสงสัย (Phishing)';
+        resultTitle.textContent = 'ระวัง! ข้อความนี้มีแนวโน้มเป็นอันตราย (Phishing)';
         resultTitle.className = 'text-lg md:text-xl font-bold text-rose-600';
         resultIcon.textContent = '🚨';
         resultIcon.className = 'w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-rose-100 text-rose-600 shrink-0';
-        confidenceBar.className = 'h-3 rounded-full bg-rose-500 transition-all duration-500';
+        confidenceBar.className = 'h-2 rounded-full bg-rose-500 transition-all duration-700 ease-out';
 
-        adviceContainer.className = 'p-4 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm space-y-2';
+        adviceContainer.className = 'p-4 rounded-2xl border border-rose-200 bg-rose-50/70 text-rose-950 text-sm space-y-2';
         adviceContainer.innerHTML = `
-          <p class="font-bold text-rose-700">🛡️ ข้อแนะนำในการปฏิบัติตัว:</p>
-          <ul class="list-disc list-inside space-y-1">
-            <li><strong>อย่ากดลิงก์เด็ดขาด:</strong> ลิงก์อาจพาไปเว็บดูดรหัสผ่านหรือติดไวรัส</li>
-            <li><strong>ห้ามกรอกรหัสผ่านหรือข้อมูลส่วนตัว:</strong> บริการของแท้จะไม่ขอรหัสผ่านผ่าน SMS</li>
-            <li><strong>รีบบอกผู้ปกครองหรือคุณครู:</strong> เพื่อช่วยตรวจสอบอีกครั้งอย่างปลอดภัย</li>
+          <p class="font-bold text-rose-700 flex items-center gap-1.5">
+            <span>🛡️</span> สิ่งที่น้องๆ ควรทำทันที:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-700 leading-relaxed">
+            <li><strong class="text-rose-600">อย่ากดลิงก์เด็ดขาด:</strong> อาจถูกหลอกดูดรหัสผ่านหรือติดไวรัส</li>
+            <li><strong class="text-rose-600">ห้ามกรอกข้อมูลส่วนตัว:</strong> รหัสผ่าน เบอร์โทร หรือชื่อผู้ปกครอง</li>
+            <li><strong class="text-rose-600">แคปรูปไว้บอกผู้ใหญ่:</strong> แจ้งคุณครูหรือผู้ปกครองให้ช่วยตรวจสอบทันที</li>
           </ul>
         `;
       } else {
@@ -208,14 +308,16 @@
         resultTitle.className = 'text-lg md:text-xl font-bold text-emerald-600';
         resultIcon.textContent = '✅';
         resultIcon.className = 'w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-emerald-100 text-emerald-600 shrink-0';
-        confidenceBar.className = 'h-3 rounded-full bg-emerald-500 transition-all duration-500';
+        confidenceBar.className = 'h-2 rounded-full bg-emerald-500 transition-all duration-700 ease-out';
 
-        adviceContainer.className = 'p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm space-y-2';
+        adviceContainer.className = 'p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 text-emerald-950 text-sm space-y-2';
         adviceContainer.innerHTML = `
-          <p class="font-bold text-emerald-700">✨ ข้อแนะนำเพิ่มเติม:</p>
-          <ul class="list-disc list-inside space-y-1">
+          <p class="font-bold text-emerald-700 flex items-center gap-1.5">
+            <span>✨</span> คำแนะนำเพิ่มเติม:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-700 leading-relaxed">
             <li>ข้อความนี้มีโครงสร้างปกติและน่าเชื่อถือ</li>
-            <li>ควรหมั่นสังเกตชื่อผู้ส่งและลิงก์เสมอเพื่อความปลอดภัย</li>
+            <li>อย่างไรก็ตาม ควรหมั่นสังเกตชื่อผู้ส่งและลิงก์เว็บไซต์เสมอเพื่อความปลอดภัย</li>
           </ul>
         `;
       }
