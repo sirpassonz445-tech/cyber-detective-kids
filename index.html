@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>นักสืบไซเบอร์จิ๋ว - ตรวจจับ Phishing & ข้อความอันตราย</title>
+  
+  <!-- Tailwind CSS & Google Fonts (Prompt) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- TensorFlow.js & Teachable Machine Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col justify-between">
+
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white shadow-md">
+    <div class="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🕵️‍♂️</span>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight">นักสืบไซเบอร์จิ๋ว (Cyber Detective)</h1>
+          <p class="text-xs md:text-sm text-indigo-100">AI ช่วยตรวจสอบข้อความ SMS ลิงก์ และเว็บอันตรายสำหรับเด็ก</p>
+        </div>
+      </div>
+      <span class="bg-indigo-700/60 text-indigo-100 text-xs px-3 py-1.5 rounded-full font-medium hidden sm:inline-block">
+        เวอร์ชันการศึกษา
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
+
+    <!-- กล่องตั้งค่า Model URL -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <label for="modelUrl" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+          <span>🧠</span> ลิงก์โมเดล Teachable Machine:
+        </label>
+        <span id="modelStatus" class="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+          ยังไม่ได้เชื่อมต่อโมเดล
+        </span>
+      </div>
+      <div class="flex gap-2">
+        <input 
+          type="text" 
+          id="modelUrl" 
+          placeholder="https://teachablemachine.withgoogle.com/models/-pFPhnGev/" 
+          class="flex-1 text-sm border border-slate-300 rounded-xl px-3.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+        <button 
+          id="loadModelBtn" 
+          onclick="initModel()" 
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition"
+        >
+          เชื่อมต่อ
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">
+        *เมื่อเทรนใน Teachable Machine เสร็จ ให้กด Export Model > TensorFlow.js > Upload my model แล้วนำลิงก์มาวาง
+      </p>
+    </div>
+
+    <!-- กล่องอัปโหลดรูปภาพ -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 text-center">
+      <h2 class="text-lg font-bold text-slate-800 mb-1">สแกนรูปภาพข้อความหรือหน้าจอ</h2>
+      <p class="text-sm text-slate-500 mb-5">แคปหน้าจอ SMS หรือแชทที่น่าสงสัย แล้วนำมาใส่ที่นี่ได้เลย</p>
+
+      <!-- Dropzone -->
+      <label 
+        for="imageUpload" 
+        class="group border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/50 hover:bg-indigo-50 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition"
+      >
+        <div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl mb-3 group-hover:scale-110 transition">
+          📸
+        </div>
+        <p class="text-sm font-medium text-indigo-900 mb-1">คลิกเพื่อเลือกรูปภาพ หรือลากไฟล์มาวางที่นี่</p>
+        <p class="text-xs text-slate-400">รองรับไฟล์ PNG, JPG</p>
+        <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="handleImage(event)" />
+      </label>
+
+      <!-- Preview Image -->
+      <div id="previewContainer" class="hidden mt-6 flex flex-col items-center">
+        <div class="relative max-h-72 max-w-sm rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+          <img id="imagePreview" src="" alt="ตัวอย่างรูปภาพ" class="max-h-72 object-contain" />
+        </div>
+        <button 
+          id="predictBtn"
+          onclick="predict()" 
+          class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-full shadow-md transition flex items-center gap-2"
+        >
+          <span>🔍</span> เริ่มตรวจสอบด้วย AI
+        </button>
+      </div>
+    </div>
+
+    <!-- ผลลัพธ์การสแกน -->
+    <div id="resultCard" class="hidden mt-6 bg-white rounded-2xl p-6 shadow-sm border border-slate-200 transition-all">
+      <div class="flex items-center gap-4 mb-4">
+        <div id="resultIcon" class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"></div>
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">ผลการวิเคราะห์</span>
+          <h3 id="resultTitle" class="text-xl font-bold"></h3>
+          <p id="resultConfidence" class="text-xs text-slate-500"></p>
+        </div>
+      </div>
+
+      <!-- แถบแสดงเปอร์เซ็นต์ -->
+      <div class="w-full bg-slate-100 rounded-full h-3 mb-5 overflow-hidden">
+        <div id="confidenceBar" class="h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
+
+      <!-- คำแนะนำสำหรับเด็ก (Cyber Safety Advice) -->
+      <div id="adviceContainer" class="p-4 rounded-xl border text-sm space-y-2"></div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+    โครงงานเพื่อการศึกษา: การตรวจจับข้อความอันตรายและ Phishing ด้วย Machine Learning
+  </footer>
+
+  <!-- Script Logic -->
+  <script>
+    let model, maxPredictions;
+    const modelStatus = document.getElementById('modelStatus');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewContainer = document.getElementById('previewContainer');
+    const resultCard = document.getElementById('resultCard');
+    const predictBtn = document.getElementById('predictBtn');
+
+    // 1. เชื่อมต่อโมเดลจาก Teachable Machine URL
+    async function initModel() {
+      let url = document.getElementById('modelUrl').value.trim();
+      if (!url) {
+        alert('กรุณากรอกลิงก์โมเดลก่อนกดเชื่อมต่อครับ');
+        return;
+      }
+      if (!url.endsWith('/')) url += '/';
+
+      const modelURL = url + "model.json";
+      const metadataURL = url + "metadata.json";
+
+      modelStatus.textContent = '⏳ กำลังโหลดโมเดล...';
+      modelStatus.className = 'text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium';
+
+      try {
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+        modelStatus.textContent = '✅ เชื่อมต่อโมเดลสำเร็จ';
+        modelStatus.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium';
+      } catch (error) {
+        console.error(error);
+        modelStatus.textContent = '❌ โหลดโมเดลไม่สำเร็จ ตรวจสอบลิงก์อีกครั้ง';
+        modelStatus.className = 'text-xs px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-medium';
+      }
+    }
+
+    // 2. แสดงตัวอย่างรูปภาพเมื่อเลือกไฟล์
+    function handleImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imagePreview.src = e.target.result;
+          previewContainer.classList.remove('hidden');
+          resultCard.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // 3. วิเคราะห์รูปภาพด้วยโมเดล
+    async function predict() {
+      if (!model) {
+        alert('กรุณาวางลิงก์โมเดลและกดเชื่อมต่อโมเดลก่อนทำการสแกนครับ');
+        return;
+      }
+
+      predictBtn.disabled = true;
+      predictBtn.innerHTML = '<span>⏳</span> กำลังวิเคราะห์...';
+
+      const prediction = await model.predict(imagePreview);
+      
+      // หาผลลัพธ์ที่มีค่าความมั่นใจ (probability) สูงสุด
+      let topPrediction = prediction.reduce((max, current) => 
+        (current.probability > max.probability) ? current : max
+      );
+
+      displayResult(topPrediction);
+
+      predictBtn.disabled = false;
+      predictBtn.innerHTML = '<span>🔍</span> เริ่มตรวจสอบด้วย AI';
+    }
+
+    // 4. แสดงผลลัพธ์และคำแนะนำสำหรับเด็ก
+    function displayResult(result) {
+      resultCard.classList.remove('hidden');
+      const className = result.className.toLowerCase();
+      const percent = (result.probability * 100).toFixed(1);
+
+      const resultTitle = document.getElementById('resultTitle');
+      const resultConfidence = document.getElementById('resultConfidence');
+      const resultIcon = document.getElementById('resultIcon');
+      const confidenceBar = document.getElementById('confidenceBar');
+      const adviceContainer = document.getElementById('adviceContainer');
+
+      resultConfidence.textContent = `ความแม่นยำของ AI: ${percent}%`;
+      confidenceBar.style.width = `${percent}%`;
+
+      // ตรวจสอบว่าเป็นคลาส Phishing หรือ Safe
+      if (className.includes('phishing') || className.includes('danger') || className.includes('อันตราย')) {
+        // ผลลัพธ์: อันตราย
+        resultTitle.textContent = 'อันตราย! ตรวจพบข้อความน่าสงสัย (Phishing)';
+        resultTitle.className = 'text-xl font-bold text-rose-600';
+        resultIcon.textContent = '🚨';
+        resultIcon.className = 'w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-rose-100 text-rose-600';
+        confidenceBar.className = 'h-3 rounded-full bg-rose-500 transition-all duration-500';
+
+        adviceContainer.className = 'p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-900 text-sm space-y-2';
+        adviceContainer.innerHTML = `
+          <p class="font-bold">🛡️ สิ่งที่ควรทำทันที:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>อย่ากดลิงก์เด็ดขาด:</strong> ลิงก์อาจพาไปเว็บดูดรหัสผ่านหรือดาวน์โหลดไวรัส</li>
+            <li><strong>ห้ามกรอกรหัสผ่านหรือเบอร์โทร:</strong> เว็บทางการจะไม่มีการขอรหัสผ่านทาง SMS</li>
+            <li><strong>บอกผู้ปกครองหรือคุณครู:</strong> ให้ผู้ใหญ่ช่วยตรวจสอบแหล่งที่มาของข้อความ</li>
+          </ul>
+        `;
+      } else {
+        // ผลลัพธ์: ปลอดภัย
+        resultTitle.textContent = 'ปลอดภัย! ไม่พบรูปแบบข้อความหลอกลวง';
+        resultTitle.className = 'text-xl font-bold text-emerald-600';
+        resultIcon.textContent = '✅';
+        resultIcon.className = 'w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-emerald-100 text-emerald-600';
+        confidenceBar.className = 'h-3 rounded-full bg-emerald-500 transition-all duration-500';
+
+        adviceContainer.className = 'p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm space-y-2';
+        adviceContainer.innerHTML = `
+          <p class="font-bold">✨ คำแนะนำเพิ่มเติม:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li>ข้อความนี้มีโครงสร้างปกติและน่าเชื่อถือ</li>
+            <li>อย่างไรก็ตาม ควรสังเกตชื่อผู้ส่งและโดเมนเว็บไซต์ก่อนกดส่งข้อมูลทุกครั้ง</li>
+          </ul>
+        `;
+      }
+
+      // เลื่อนหน้าจอลงมาที่ผลลัพธ์
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>
